@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
-	"golang.org/x/crypto/bcrypt"
-
-	// "ecom-go-backend/internal/models/models"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type RegisterRequest struct {
@@ -51,6 +51,60 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User registered successfully")
 }
 
+var jwtSecret = []byte("Kw1dNRnQBxH9uqwvvbJEu5KBMR+bxuE+vu2gLM9a8Mg=") // Change to env var in real app
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Token string `json:"token"`
+}
+
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Login endpoint not implemented yet.")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req LoginRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var hashedPassword string
+	err = Db.QueryRow(context.Background(),
+		"SELECT password FROM users WHERE email=$1", req.Email).Scan(&hashedPassword)
+	if err == pgx.ErrNoRows {
+		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Compare password with hash
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
+	if err != nil {
+		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		return
+	}
+
+	// Create a new JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email": req.Email,
+		"exp":   time.Now().Add(time.Hour * 72).Unix(), // 3 days expiry
+	})
+
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(LoginResponse{Token: tokenString})
 }

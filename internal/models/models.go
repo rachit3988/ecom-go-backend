@@ -7,22 +7,28 @@ type User struct {
 }
 
 type Category struct {
-	ID   int    `db:"id"`
-	Name string `db:"name"`
+	ID   int    `json:"id" db:"id"`
+	Name string `json:"name" db:"name"`
 }
 
 type Product struct {
-	ID          int     `db:"id"`
-	Name        string  `db:"name"`
-	Description string  `db:"description"`
-	CategoryID  int     `db:"category_id"`
-	Price       float64 `db:"price"`
-	Stock       int     `db:"stock"`
+	ID          int     `json:"id" db:"id"`
+	Name        string  `json:"name" db:"name"`
+	Description string  `json:"description" db:"description"`
+	CategoryID  int     `json:"category_id" db:"category_id"`
+	Price       float64 `json:"price" db:"price"`
+	Stock       int     `json:"stock" db:"stock"`
 }
 
 type Order struct {
-	ID         int     `db:"id"`
-	UserID     int     `db:"user_id"`
-	ProductIDs []int   `db:"product_ids"` // Can later use order_items table for details
-	Total      float64 `db:"total"`
+	ID     int     `json:"id" db:"id"`
+	UserID int     `json:"user_id" db:"user_id"`
+	Total  float64 `json:"total" db:"total"`
+}
+
+type OrderProduct struct {
+	ID        int `json:"id" db:"id"`
+	OrderID   int `json:"order_id" db:"order_id"`
+	ProductID int `json:"product_id" db:"product_id"`
+	Quantity  int `json:"quantity" db:"quantity"`
 }
