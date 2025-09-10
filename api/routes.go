@@ -14,4 +14,5 @@ func SetupRoutes() {
 	http.Handle("/categories", middleware.JWTAuth(http.HandlerFunc(handlers.CategoriesHandler)))
 	http.Handle("/products", middleware.JWTAuth(http.HandlerFunc(handlers.ProductsHandler)))
 	http.Handle("/checkout", middleware.JWTAuth(http.HandlerFunc(handlers.CheckoutHandler)))
+	http.Handle("/order-history", middleware.JWTAuth(http.HandlerFunc(handlers.OrderHistoryHandler)))
 }

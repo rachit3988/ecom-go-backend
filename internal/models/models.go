@@ -20,15 +20,16 @@ type Product struct {
 	Stock       int     `json:"stock" db:"stock"`
 }
 
-type Order struct {
-	ID     int     `json:"id" db:"id"`
-	UserID int     `json:"user_id" db:"user_id"`
-	Total  float64 `json:"total" db:"total"`
+type OrderProductDetail struct {
+	ProductID   int     `json:"product_id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Quantity    int     `json:"quantity"`
+	Price       float64 `json:"price"`
 }
 
-type OrderProduct struct {
-	ID        int `json:"id" db:"id"`
-	OrderID   int `json:"order_id" db:"order_id"`
-	ProductID int `json:"product_id" db:"product_id"`
-	Quantity  int `json:"quantity" db:"quantity"`
+type OrderDetail struct {
+	OrderID int                  `json:"order_id"`
+	Total   float64              `json:"total"`
+	Items   []OrderProductDetail `json:"items"`
 }
