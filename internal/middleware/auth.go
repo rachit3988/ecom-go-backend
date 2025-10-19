@@ -3,12 +3,13 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("Kw1dNRnQBxH9uqwvvbJEu5KBMR+bxuE+vu2gLM9a8Mg=") // Use env var in real app
+var jwtSecret = []byte(os.Getenv("JWTSecret"))
 
 func JWTAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
