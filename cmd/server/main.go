@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
@@ -23,6 +24,11 @@ func init() {
 }
 
 func main() {
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // default for local dev
+	}
 
 	var err error
 	db, err = database.ConnectDB()
@@ -42,7 +48,7 @@ func main() {
 
 	api.SetupRoutes()
 	fmt.Println("Server running on http://localhost:8080")
-	err = http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		fmt.Println("Server failed:", err)
 	}
