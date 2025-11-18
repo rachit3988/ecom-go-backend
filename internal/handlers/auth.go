@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,6 +14,7 @@ import (
 )
 
 type RegisterRequest struct {
+	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -32,16 +34,17 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Hash the user password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
-	// Insert user into DB
 	_, err = Db.Exec(context.Background(),
-		"INSERT INTO users (email, password) VALUES ($1, $2)", req.Email, string(hashedPassword))
+		"INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
+		req.Name, req.Email, string(hashedPassword),
+	)
+
 	if err != nil {
 		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -51,7 +54,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User registered successfully")
 }
 
-var jwtSecret = []byte("Kw1dNRnQBxH9uqwvvbJEu5KBMR+bxuE+vu2gLM9a8Mg=") // Change to env var in real app
+var jwtSecret = []byte(os.Getenv("JWTSecret"))
 
 type LoginRequest struct {
 	Email    string `json:"email"`

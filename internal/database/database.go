@@ -9,6 +9,6 @@ import (
 
 func ConnectDB() (*pgx.Conn, error) {
 	// Use environment variables for credentials
-	connStr := os.Getenv("DATABASE_URL") // e.g. postgres://user:pass@localhost:5432/dbname
+	connStr := os.Getenv("DATABASE_URL")
 	return pgx.Connect(context.Background(), connStr)
 }
