@@ -9,7 +9,9 @@ import (
 )
 
 func CategoriesHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := Db.Query(context.Background(), "SELECT id, name FROM categories")
+	rows, err := Db.Query(context.Background(),
+		"SELECT id, name, image_url FROM categories",
+	)
 	if err != nil {
 		http.Error(w, "Failed to fetch categories: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -17,10 +19,10 @@ func CategoriesHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	var categories []models.Category
+
 	for rows.Next() {
 		var c models.Category
-		err := rows.Scan(&c.ID, &c.Name)
-		if err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.ImageURL); err != nil {
 			http.Error(w, "Failed to scan category: "+err.Error(), http.StatusInternalServerError)
 			return
 		}

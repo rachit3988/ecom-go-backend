@@ -4,11 +4,19 @@ import (
 	"context"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ConnectDB() (*pgx.Conn, error) {
-	// Use environment variables for credentials
+var DB *pgxpool.Pool
+
+func ConnectDB() error {
 	connStr := os.Getenv("DATABASE_URL")
-	return pgx.Connect(context.Background(), connStr)
+
+	pool, err := pgxpool.New(context.Background(), connStr)
+	if err != nil {
+		return err
+	}
+
+	DB = pool
+	return nil
 }

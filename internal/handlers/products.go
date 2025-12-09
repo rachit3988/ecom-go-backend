@@ -11,22 +11,33 @@ import (
 )
 
 func ProductsHandler(w http.ResponseWriter, r *http.Request) {
-	// Optional: Filter by category ID via query param ?category=1
+	// Optional filters: product ID via ?id=1 or category via ?category=1
 	categoryIDStr := r.URL.Query().Get("category")
+	productIDStr := r.URL.Query().Get("id")
+
 	var rows pgx.Rows
 	var err error
 
-	if categoryIDStr != "" {
-		categoryID, err := strconv.Atoi(categoryIDStr)
-		if err != nil {
+	switch {
+	case productIDStr != "":
+		productID, convErr := strconv.Atoi(productIDStr)
+		if convErr != nil {
+			http.Error(w, "Invalid product ID", http.StatusBadRequest)
+			return
+		}
+		rows, err = Db.Query(context.Background(),
+			"SELECT id, name, description, category_id, price, stock, image_url FROM products WHERE id=$1", productID)
+	case categoryIDStr != "":
+		categoryID, convErr := strconv.Atoi(categoryIDStr)
+		if convErr != nil {
 			http.Error(w, "Invalid category ID", http.StatusBadRequest)
 			return
 		}
 		rows, err = Db.Query(context.Background(),
-			"SELECT id, name, description, category_id, price, stock FROM products WHERE category_id=$1", categoryID)
-	} else {
+			"SELECT id, name, description, category_id, price, stock, image_url FROM products WHERE category_id=$1", categoryID)
+	default:
 		rows, err = Db.Query(context.Background(),
-			"SELECT id, name, description, category_id, price, stock FROM products")
+			"SELECT id, name, description, category_id, price, stock, image_url FROM products")
 	}
 
 	if err != nil {
@@ -38,7 +49,7 @@ func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
-		err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CategoryID, &p.Price, &p.Stock)
+		err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CategoryID, &p.Price, &p.Stock, &p.ImageURL)
 		if err != nil {
 			http.Error(w, "Failed to scan product: "+err.Error(), http.StatusInternalServerError)
 			return

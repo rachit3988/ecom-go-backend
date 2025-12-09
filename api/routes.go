@@ -13,6 +13,12 @@ func SetupRoutes() {
 	// Protected routes: wrap with JWTAuth middleware
 	http.Handle("/categories", middleware.JWTAuth(http.HandlerFunc(handlers.CategoriesHandler)))
 	http.Handle("/products", middleware.JWTAuth(http.HandlerFunc(handlers.ProductsHandler)))
-	http.Handle("/checkout", middleware.JWTAuth(http.HandlerFunc(handlers.CheckoutHandler)))
-	http.Handle("/order-history", middleware.JWTAuth(http.HandlerFunc(handlers.OrderHistoryHandler)))
+	http.Handle("/recently-viewed/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddRecentlyViewed)))
+	http.Handle("/recently-viewed", middleware.JWTAuth(http.HandlerFunc(handlers.GetRecentlyViewed)))
+	http.Handle("/cart/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddToCart)))
+	http.Handle("/cart/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddToCart)))
+	http.Handle("/cart/remove", middleware.JWTAuth(http.HandlerFunc(handlers.RemoveFromCart)))
+	http.Handle("/cart/get", middleware.JWTAuth(http.HandlerFunc(handlers.GetCart)))
+	http.Handle("/checkout", middleware.JWTAuth(http.HandlerFunc(handlers.Checkout)))
+	http.Handle("/past-orders", middleware.JWTAuth(http.HandlerFunc(handlers.GetPastOrders)))
 }

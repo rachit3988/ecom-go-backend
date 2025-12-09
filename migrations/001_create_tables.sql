@@ -18,15 +18,9 @@ CREATE TABLE products (
     stock INT NOT NULL
 );
 
-CREATE TABLE orders (
+CREATE TABLE recently_viewed (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id),
-    total NUMERIC NOT NULL
-);
-
-CREATE TABLE order_products (
-    id SERIAL PRIMARY KEY,
-    order_id INT REFERENCES orders(id),
-    product_id INT REFERENCES products(id),
-    quantity INT NOT NULL
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    viewed_at TIMESTAMP DEFAULT NOW()
 );

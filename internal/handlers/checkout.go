@@ -2,112 +2,99 @@ package handlers
 
 import (
 	"context"
+	"ecom-go-backend/internal/models"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
-type CheckoutRequest struct {
-	UserID int `json:"user_id"`
-	Items  []struct {
-		ProductID int `json:"product_id"`
-		Quantity  int `json:"quantity"`
-	} `json:"items"`
-}
+func Checkout(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(int)
 
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
+	// 1. Fetch cart items
+	rows, err := Db.Query(context.Background(), `
+		SELECT c.product_id, c.quantity, p.price
+		FROM cart_items c
+		JOIN products p ON p.id = c.product_id
+		WHERE c.user_id = $1
+	`, userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch cart: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
 
-func respondWithError(w http.ResponseWriter, code int, message string) {
-	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
-}
+	var items []models.CheckoutItemInfo
+	var total float64 = 0
 
-func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		respondWithError(w, http.StatusMethodNotAllowed, "Only POST method allowed")
+	for rows.Next() {
+		var it models.CheckoutItemInfo
+		err := rows.Scan(&it.ProductID, &it.Quantity, &it.Price)
+		if err != nil {
+			http.Error(w, "Failed to scan cart item: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		total += float64(it.Quantity) * it.Price
+		items = append(items, it)
+	}
+
+	if len(items) == 0 {
+		http.Error(w, "Cart is empty", http.StatusBadRequest)
 		return
 	}
 
-	var req CheckoutRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-
-	if len(req.Items) == 0 {
-		respondWithError(w, http.StatusBadRequest, "Cart is empty")
-		return
-	}
-
+	// 2. Begin transaction
 	tx, err := Db.Begin(context.Background())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to start transaction")
+		http.Error(w, "Failed to begin transaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback(context.Background())
 
-	total := 0.0
-
-	for _, item := range req.Items {
-		var price float64
-		var stock int
-
-		err := tx.QueryRow(context.Background(),
-			"SELECT price, stock FROM products WHERE id=$1 FOR UPDATE", item.ProductID).Scan(&price, &stock)
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Product ID %d not found", item.ProductID))
-			return
-		}
-
-		if stock < item.Quantity {
-			respondWithError(w, http.StatusBadRequest,
-				fmt.Sprintf("Insufficient stock for product ID %d. Available: %d, Requested: %d",
-					item.ProductID, stock, item.Quantity))
-			return
-		}
-
-		total += price * float64(item.Quantity)
-
-		// Update stock
-		_, err = tx.Exec(context.Background(),
-			"UPDATE products SET stock = stock - $1 WHERE id = $2", item.Quantity, item.ProductID)
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Failed to update product stock")
-			return
-		}
-	}
-
-	var orderID int
-	err = tx.QueryRow(context.Background(),
-		"INSERT INTO orders (user_id, total) VALUES ($1, $2) RETURNING id",
-		req.UserID, total).Scan(&orderID)
+	// 3. Create order
+	var orderID int64
+	err = tx.QueryRow(context.Background(), `
+		INSERT INTO orders (user_id, total_amount)
+		VALUES ($1, $2)
+		RETURNING id
+	`, userID, total).Scan(&orderID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to create order")
+		http.Error(w, "Failed to create order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	for _, item := range req.Items {
-		_, err = tx.Exec(context.Background(),
-			"INSERT INTO order_products (order_id, product_id, quantity) VALUES ($1, $2, $3)",
-			orderID, item.ProductID, item.Quantity)
+	// 4. Insert order items
+	for _, it := range items {
+		_, err := tx.Exec(context.Background(), `
+			INSERT INTO order_items (order_id, product_id, quantity, price)
+			VALUES ($1, $2, $3, $4)
+		`, orderID, it.ProductID, it.Quantity, it.Price)
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Failed to insert order item")
+			http.Error(w, "Failed to insert order items: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
-	if err = tx.Commit(context.Background()); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to commit transaction")
+	// 5. Clear cart
+	_, err = tx.Exec(context.Background(),
+		"DELETE FROM cart_items WHERE user_id=$1", userID)
+	if err != nil {
+		http.Error(w, "Failed to clear cart: "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// 6. Commit transaction
+	if err := tx.Commit(context.Background()); err != nil {
+		http.Error(w, "Failed to commit: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 7. Send response
+	resp := models.CheckoutResponse{
+		OrderID:     orderID,
+		TotalAmount: total,
+		Items:       items,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message":  "Order created successfully",
-		"order_id": orderID,
-		"total":    total,
-	})
+	json.NewEncoder(w).Encode(resp)
 }
