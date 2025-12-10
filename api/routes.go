@@ -16,7 +16,6 @@ func SetupRoutes() {
 	http.Handle("/recently-viewed/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddRecentlyViewed)))
 	http.Handle("/recently-viewed", middleware.JWTAuth(http.HandlerFunc(handlers.GetRecentlyViewed)))
 	http.Handle("/cart/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddToCart)))
-	http.Handle("/cart/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddToCart)))
 	http.Handle("/cart/remove", middleware.JWTAuth(http.HandlerFunc(handlers.RemoveFromCart)))
 	http.Handle("/cart/get", middleware.JWTAuth(http.HandlerFunc(handlers.GetCart)))
 	http.Handle("/checkout", middleware.JWTAuth(http.HandlerFunc(handlers.Checkout)))
