@@ -21,4 +21,5 @@ func SetupRoutes() {
 	http.Handle("/cart/get", middleware.JWTAuth(http.HandlerFunc(handlers.GetCart)))
 	http.Handle("/checkout", middleware.JWTAuth(http.HandlerFunc(handlers.Checkout)))
 	http.Handle("/past-orders", middleware.JWTAuth(http.HandlerFunc(handlers.GetPastOrders)))
+	http.Handle("/most-popular", middleware.JWTAuth(http.HandlerFunc(handlers.GetMostPopular)))
 }
