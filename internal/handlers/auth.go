@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,7 +20,7 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 }
 
-var Db *pgx.Conn // Set this from main.go or pass db instance properly
+var Db *pgxpool.Pool
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
