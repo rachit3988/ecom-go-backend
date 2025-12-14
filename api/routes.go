@@ -9,9 +9,9 @@ import (
 func SetupRoutes() {
 	http.HandleFunc("/register", handlers.RegisterHandler)
 	http.HandleFunc("/login", handlers.LoginHandler)
-	http.Handle("/categories", middleware.JWTAuth(http.HandlerFunc(handlers.CategoriesHandler)))
-	http.Handle("/products", middleware.JWTAuth(http.HandlerFunc(handlers.ProductsHandler)))
-	http.Handle("/most-popular", middleware.JWTAuth(http.HandlerFunc(handlers.GetMostPopular)))
+	http.HandleFunc("/categories", handlers.CategoriesHandler)
+	http.HandleFunc("/products", handlers.ProductsHandler)
+	http.HandleFunc("/most-popular", handlers.ProductsHandler)
 
 	// Protected routes: wrap with JWTAuth middleware
 	http.Handle("/recently-viewed/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddRecentlyViewed)))
