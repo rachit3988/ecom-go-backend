@@ -26,7 +26,7 @@ func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		rows, err = Db.Query(context.Background(),
-			"SELECT id, name, description, category_id, price, stock, image_url FROM products WHERE id=$1", productID)
+			"SELECT id, name, description, category_id, price, stock, image_urls FROM products WHERE id=$1", productID)
 	case categoryIDStr != "":
 		categoryID, convErr := strconv.Atoi(categoryIDStr)
 		if convErr != nil {
@@ -34,10 +34,10 @@ func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		rows, err = Db.Query(context.Background(),
-			"SELECT id, name, description, category_id, price, stock, image_url FROM products WHERE category_id=$1", categoryID)
+			"SELECT id, name, description, category_id, price, stock, image_urls FROM products WHERE category_id=$1", categoryID)
 	default:
 		rows, err = Db.Query(context.Background(),
-			"SELECT id, name, description, category_id, price, stock, image_url FROM products")
+			"SELECT id, name, description, category_id, price, stock, image_urls FROM products")
 	}
 
 	if err != nil {
@@ -49,7 +49,7 @@ func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
-		err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CategoryID, &p.Price, &p.Stock, &p.ImageURL)
+		err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CategoryID, &p.Price, &p.Stock, &p.ImageURLs)
 		if err != nil {
 			http.Error(w, "Failed to scan product: "+err.Error(), http.StatusInternalServerError)
 			return

@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	ID       int    `db:"id"`
@@ -15,13 +17,13 @@ type Category struct {
 }
 
 type Product struct {
-	ID          int     `json:"id" db:"id"`
-	Name        string  `json:"name" db:"name"`
-	Description string  `json:"description" db:"description"`
-	CategoryID  int     `json:"category_id" db:"category_id"`
-	Price       float64 `json:"price" db:"price"`
-	Stock       int     `json:"stock" db:"stock"`
-	ImageURL    string  `json:"image_url" db:"image_url"`
+	ID          int      `json:"id" db:"id"`
+	Name        string   `json:"name" db:"name"`
+	Description string   `json:"description" db:"description"`
+	CategoryID  int      `json:"category_id" db:"category_id"`
+	Price       float64  `json:"price" db:"price"`
+	Stock       int      `json:"stock" db:"stock"`
+	ImageURLs   []string `json:"image_urls" db:"image_urls"`
 }
 
 type OrderProductDetail struct {

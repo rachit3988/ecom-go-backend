@@ -44,7 +44,7 @@ func GetMostPopular(w http.ResponseWriter, r *http.Request) {
 			&p.CategoryID,
 			&p.Price,
 			&p.Stock,
-			&p.ImageURL,
+			&p.ImageURLs,
 			&popularity,
 		)
 		if err != nil {

@@ -12,10 +12,10 @@ func SetupRoutes() {
 	http.HandleFunc("/categories", handlers.CategoriesHandler)
 	http.HandleFunc("/products", handlers.ProductsHandler)
 	http.HandleFunc("/most-popular", handlers.ProductsHandler)
+	http.HandleFunc("/recently-viewed", handlers.GetRecentlyViewed)
 
 	// Protected routes: wrap with JWTAuth middleware
 	http.Handle("/recently-viewed/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddRecentlyViewed)))
-	http.Handle("/recently-viewed", middleware.JWTAuth(http.HandlerFunc(handlers.GetRecentlyViewed)))
 	http.Handle("/cart/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddToCart)))
 	http.Handle("/cart/remove", middleware.JWTAuth(http.HandlerFunc(handlers.RemoveFromCart)))
 	http.Handle("/cart/get", middleware.JWTAuth(http.HandlerFunc(handlers.GetCart)))

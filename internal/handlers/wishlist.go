@@ -81,7 +81,7 @@ func GetWishlist(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var p models.Product
-		err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CategoryID, &p.Price, &p.Stock, &p.ImageURL)
+		err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CategoryID, &p.Price, &p.Stock, &p.ImageURLs)
 		if err != nil {
 			http.Error(w, "Failed to parse wishlist products", http.StatusInternalServerError)
 			return
