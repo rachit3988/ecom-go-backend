@@ -12,7 +12,7 @@ func SetupRoutes() {
 	http.HandleFunc("/categories", handlers.CategoriesHandler)
 	http.HandleFunc("/products", handlers.ProductsHandler)
 	http.HandleFunc("/most-popular", handlers.ProductsHandler)
-	http.HandleFunc("/recently-viewed", handlers.GetRecentlyViewed)
+	http.HandleFunc("/recently-viewed", handlers.ProductsHandler)
 
 	// Protected routes: wrap with JWTAuth middleware
 	http.Handle("/recently-viewed/add", middleware.JWTAuth(http.HandlerFunc(handlers.AddRecentlyViewed)))
