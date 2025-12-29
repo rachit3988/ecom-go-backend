@@ -1,21 +1,26 @@
 package main
 
 import (
-	"ecom-go-backend/api"
-	"ecom-go-backend/internal/database"
-	"ecom-go-backend/internal/handlers"
 	"log"
 	"net/http"
 	"os"
 
+	"ecom-go-backend/api"
+	"ecom-go-backend/internal/database"
+	"ecom-go-backend/internal/handlers"
+	"ecom-go-backend/internal/middleware"
+
 	"github.com/joho/godotenv"
 )
 
-func init() {
-	_ = godotenv.Load()
-}
-
 func main() {
+
+	// Load env FIRST
+	_ = godotenv.Load()
+
+	// Init JWT AFTER env
+	middleware.InitJWT()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

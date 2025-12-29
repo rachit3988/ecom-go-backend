@@ -11,16 +11,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = func() []byte {
+var jwtSecret []byte
+
+// Call this ONCE from main()
+func InitJWT() {
 	secret := os.Getenv("JWTSecret")
 	if secret == "" {
 		log.Fatal("JWTSecret is not set")
 	}
-	return []byte(secret)
-}()
+	jwtSecret = []byte(secret)
+}
 
+// JWT middleware
 func JWTAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
@@ -34,7 +39,6 @@ func JWTAuth(next http.Handler) http.Handler {
 		}
 
 		tokenString := parts[1]
-
 		claims := jwt.MapClaims{}
 
 		token, err := jwt.ParseWithClaims(
@@ -48,18 +52,13 @@ func JWTAuth(next http.Handler) http.Handler {
 			},
 		)
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		if !token.Valid {
+		if err != nil || !token.Valid {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		// ✅ Token is valid
-		ctx := context.WithValue(r.Context(), "user", claims)
+		// ✅ Put claims into context
+		ctx := context.WithValue(r.Context(), UserCtxKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

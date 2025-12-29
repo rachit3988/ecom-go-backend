@@ -3,7 +3,12 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
+
+	"ecom-go-backend/internal/middleware"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type CheckoutItemRequest struct {
@@ -28,18 +33,24 @@ type CheckoutResponse struct {
 }
 
 func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
-	userIDVal := r.Context().Value("user_id")
-	if userIDVal == nil {
+
+	// 🔐 AUTH (FIXED)
+	claims, ok := r.Context().Value(middleware.UserCtxKey).(jwt.MapClaims)
+	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	userID, ok := userIDVal.(int)
+	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
-		http.Error(w, "Invalid user context", http.StatusUnauthorized)
+		http.Error(w, "Invalid user in token", http.StatusUnauthorized)
 		return
 	}
 
+	userID := int(userIDFloat)
+	log.Println("Checkout by user:", userID)
+
+	// 📦 Parse request
 	var req CheckoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -62,13 +73,15 @@ func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
 	var orderItems []CheckoutItemResponse
 
 	for _, item := range req.Items {
+
 		if item.Quantity <= 0 {
 			http.Error(w, "Invalid quantity", http.StatusBadRequest)
 			return
 		}
 
 		var price float64
-		err := tx.QueryRow(context.Background(),
+		err := tx.QueryRow(
+			context.Background(),
 			"SELECT price FROM products WHERE id=$1",
 			item.ProductID,
 		).Scan(&price)
@@ -88,11 +101,13 @@ func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var orderID int64
-	err = tx.QueryRow(context.Background(),
+	err = tx.QueryRow(
+		context.Background(),
 		`INSERT INTO orders (user_id, total_amount)
 		 VALUES ($1, $2)
 		 RETURNING id`,
-		userID, total,
+		userID,
+		total,
 	).Scan(&orderID)
 
 	if err != nil {
@@ -101,10 +116,14 @@ func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, it := range orderItems {
-		_, err := tx.Exec(context.Background(),
+		_, err := tx.Exec(
+			context.Background(),
 			`INSERT INTO order_items (order_id, product_id, quantity, price)
 			 VALUES ($1, $2, $3, $4)`,
-			orderID, it.ProductID, it.Quantity, it.Price,
+			orderID,
+			it.ProductID,
+			it.Quantity,
+			it.Price,
 		)
 		if err != nil {
 			http.Error(w, "Failed to insert order items", http.StatusInternalServerError)
@@ -112,9 +131,12 @@ func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// optional: clear cart
-	_, _ = tx.Exec(context.Background(),
-		"DELETE FROM cart_items WHERE user_id=$1", userID)
+	// 🧹 Clear cart (optional)
+	_, _ = tx.Exec(
+		context.Background(),
+		"DELETE FROM cart_items WHERE user_id=$1",
+		userID,
+	)
 
 	if err := tx.Commit(context.Background()); err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)

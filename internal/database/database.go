@@ -6,7 +6,12 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
+
+func init() {
+	_ = godotenv.Load()
+}
 
 var DB *pgxpool.Pool
 

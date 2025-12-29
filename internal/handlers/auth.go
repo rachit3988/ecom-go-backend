@@ -15,13 +15,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var Db *pgxpool.Pool
+
+var jwtSecret = func() []byte {
+	secret := os.Getenv("JWTSecret")
+	if secret == "" {
+		log.Fatal("JWTSecret is not set")
+	}
+	return []byte(secret)
+}()
+
 type RegisterRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
-
-var Db *pgxpool.Pool
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -55,14 +63,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintln(w, "User registered successfully")
 }
-
-var jwtSecret = func() []byte {
-	secret := os.Getenv("JWTSecret")
-	if secret == "" {
-		log.Fatal("JWTSecret is not set")
-	}
-	return []byte(secret)
-}()
 
 type LoginRequest struct {
 	Email    string `json:"email"`
