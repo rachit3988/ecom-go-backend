@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -26,24 +26,33 @@ func JWTAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println("JWTSecret length:", len(jwtSecret))
-
 		tokenString := parts[1]
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, http.ErrAbortHandler
-			}
-			return jwtSecret, nil
-		})
+		claims := jwt.MapClaims{}
 
-		if err != nil || !token.Valid {
+		token, err := jwt.ParseWithClaims(
+			tokenString,
+			claims,
+			func(token *jwt.Token) (interface{}, error) {
+				if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+					return nil, fmt.Errorf("unexpected signing method: %s", token.Method.Alg())
+				}
+				return jwtSecret, nil
+			},
+		)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		if !token.Valid {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		// Optionally add user info to request context here
-		ctx := context.WithValue(r.Context(), "user", token.Claims)
+		// ✅ Token is valid
+		ctx := context.WithValue(r.Context(), "user", claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
