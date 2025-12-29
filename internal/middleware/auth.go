@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -10,7 +11,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(os.Getenv("JWTSecret"))
+var jwtSecret = func() []byte {
+	secret := os.Getenv("JWTSecret")
+	if secret == "" {
+		log.Fatal("JWTSecret is not set")
+	}
+	return []byte(secret)
+}()
 
 func JWTAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

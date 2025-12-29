@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -55,7 +56,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User registered successfully")
 }
 
-var jwtSecret = []byte(os.Getenv("JWTSecret"))
+var jwtSecret = func() []byte {
+	secret := os.Getenv("JWTSecret")
+	if secret == "" {
+		log.Fatal("JWTSecret is not set")
+	}
+	return []byte(secret)
+}()
 
 type LoginRequest struct {
 	Email    string `json:"email"`
