@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -24,6 +25,8 @@ func JWTAuth(next http.Handler) http.Handler {
 			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
 			return
 		}
+
+		log.Println("JWTSecret length:", len(jwtSecret))
 
 		tokenString := parts[1]
 
