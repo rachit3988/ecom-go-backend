@@ -2,6 +2,7 @@ package api
 
 import (
 	"ecom-go-backend/internal/handlers"
+	"ecom-go-backend/internal/middleware"
 	"net/http"
 )
 
@@ -16,6 +17,6 @@ func SetupRoutes() {
 	http.HandleFunc("/cart/add", handlers.AddToCart)
 	http.HandleFunc("/cart/remove", handlers.RemoveFromCart)
 	http.HandleFunc("/cart/get", handlers.GetCart)
-	http.HandleFunc("/checkout", handlers.CheckoutHandler)
+	http.Handle("/checkout", middleware.JWTAuth(http.HandlerFunc(handlers.CheckoutHandler)))
 	http.HandleFunc("/past-orders", handlers.GetPastOrders)
 }

@@ -28,7 +28,17 @@ type CheckoutResponse struct {
 }
 
 func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userIDVal := r.Context().Value("user_id")
+	if userIDVal == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userID, ok := userIDVal.(int)
+	if !ok {
+		http.Error(w, "Invalid user context", http.StatusUnauthorized)
+		return
+	}
 
 	var req CheckoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

@@ -79,9 +79,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var hashedPassword string
+	var (
+		userID         int
+		hashedPassword string
+	)
+
 	err = Db.QueryRow(context.Background(),
-		"SELECT password FROM users WHERE email=$1", req.Email).Scan(&hashedPassword)
+		"SELECT id, password FROM users WHERE email=$1",
+		req.Email,
+	).Scan(&userID, &hashedPassword)
+
 	if err == pgx.ErrNoRows {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
@@ -90,17 +97,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Compare password with hash
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
 	if err != nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
-	// Create a new JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": req.Email,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(), // 3 days expiry
+		"user_id": userID,
+		"email":   req.Email,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	})
 
 	tokenString, err := token.SignedString(jwtSecret)
@@ -110,5 +116,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(LoginResponse{Token: tokenString})
+	json.NewEncoder(w).Encode(LoginResponse{
+		Token: tokenString,
+	})
 }
