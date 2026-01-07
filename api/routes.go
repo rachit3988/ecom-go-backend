@@ -18,5 +18,7 @@ func SetupRoutes() {
 	http.HandleFunc("/cart/remove", handlers.RemoveFromCart)
 	http.HandleFunc("/cart/get", handlers.GetCart)
 	http.Handle("/checkout", middleware.JWTAuth(http.HandlerFunc(handlers.CheckoutHandler)))
+	http.Handle("/payment/create-order", middleware.JWTAuth(http.HandlerFunc(handlers.CreateRazorpayOrderHandler)))
+	http.HandleFunc("/payment/verify", handlers.VerifyPaymentHandler)
 	http.HandleFunc("/past-orders", handlers.GetPastOrders)
 }
